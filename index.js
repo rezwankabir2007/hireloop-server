@@ -1,6 +1,6 @@
 import 'dotenv/config'; // এটি সবার উপরে থাকতেই হবে
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import cors from 'cors';
 
 const app = express();
@@ -59,11 +59,39 @@ app.get('/users', async (req, res) => {
 
 //jobs related apis
 
+app.get('/jobs', async(req,res)=>{
+  const cursor = jobs.find();
+  const result = await cursor.toArray();
+  res.send(result)
+})
+
+
 app.post('/jobs', async(req,res)=>{
     const job = req.body;
     const result =await jobs.insertOne(job);
     res.send(result)
 })
+
+app.delete('/jobs/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!/^[\da-f]{24}$/i.test(id)) {
+    return res.status(400).send({ message: 'Invalid job id' });
+  }
+
+  try {
+    const result = await jobs.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: 'Job not found' });
+    }
+
+    return res.status(200).send({ message: 'Job deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting job:', error);
+    return res.status(500).send({ message: 'Failed to delete job' });
+  }
+});
 
 
 
